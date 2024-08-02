@@ -3,21 +3,6 @@ import { db } from './firebaseConfig';
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore"; 
 
 // Home Collection Functions
-export const addUserToHome = async (userId, userData) => {
-  await setDoc(doc(db, "Home", userId.toString()), userData);
-};
-
-export const getUserFromHome = async (userId) => {
-  const docRef = doc(db, "Home", userId.toString());
-  const docSnap = await getDoc(docRef);
-
-  if (docSnap.exists()) {
-    return docSnap.data();
-  } else {
-    console.log("No such document!");
-    return null;
-  }
-};
 
 
 // Tasks Collection Functions
@@ -62,18 +47,3 @@ export const updateFarmBalance = async (userId, newBalance) => {
 };
 
 // Squad Collection Functions
-export const addUserToSquad = async (userId, squadData) => {
-  await setDoc(doc(db, "Squad", userId.toString()), squadData);
-};
-
-export const getUserFromSquad = async (userId) => {
-  const docRef = doc(db, "Squad", userId.toString());
-  const docSnap = await getDoc(docRef);
-
-  if (docSnap.exists()) {
-    return docSnap.data();
-  } else {
-    console.log("No such document!");
-    return null;
-  }
-};
