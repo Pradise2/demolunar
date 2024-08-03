@@ -10,7 +10,7 @@ import logo from './logo.png';
 
 const Tasks = () => {
   const [userData, setUserData] = useState(null);
-  const [userId, setUserId] = useState("001"); // Replace with dynamic ID if possible
+  const [userId, setUserId] = useState(null); // Replace with dynamic ID if possible
   const [taskFilter, setTaskFilter] = useState('new');
   const [loadingTask, setLoadingTask] = useState(null);
   const [farmData, setFarmData] = useState(null);
@@ -41,7 +41,8 @@ const Tasks = () => {
     { id: 18, title: 'React to post', reward: 1000, link: " https://t.me/lunarcoincommunity/20" },
     { id: 19, title: 'React to post', reward: 1000, link: " https://t.me/lunarcoincommunity/22" },
     { id: 20, title: 'Follow Facebook', reward: 1000, link: " https://www.facebook.com/profile.php?id=61563027839976&mibextid=LQQJ4d " },
- ];
+    { id: 21, title: 'Boost Telegram Community', reward: 5000, link: " https://t.me/boost/lunarcoincommunity " },
+  ];
 
   useEffect(() => {
     const initializeUserId = () => {
