@@ -70,7 +70,7 @@ const Squad = () => {
     if (userId) {
       fetchSquadData();
     }
-  }, [userId, userSquad]);
+  }, [userId, FarmData]);
 
 
   const copyToClipboard = () => {
@@ -99,7 +99,7 @@ const Squad = () => {
     }
   };
 
-  const handleClaim = async () => {
+  const handleClaim = async (userIdx, userBalance) => {
     // setLoading(true);
     // Vibrate when claiming
     if (navigator.vibrate) {
@@ -115,6 +115,7 @@ const Squad = () => {
         totalBalance: response.data.totalBalance,
         claimedReferral: response.data.claimedReferral,
       }));
+      setFarmData(userBalance)
     } catch (error) {
       console.error('Error during claim:', error);
       setError('Error during claim');
