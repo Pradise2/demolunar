@@ -9,16 +9,11 @@ import coin2 from './logo.png';
 
 const Home = () => {
   const [userData, setUserData] = useState(null);
-  const [userId, setUserId] = useState("001");
+  const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState(null);
   const [buttonText, setButtonText] = useState("Start");
   const [showRCFarm, setShowRCFarm] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Clear local storage when the component mounts
-    localStorage.clear();
-  }, []);
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -29,6 +24,12 @@ const Home = () => {
         setUserId(user.id);
         setUserName(user.username);
       } else {
+        console.log(userId);
+        const localData = localStorage.getItem('localUserData');
+        if (localData) {
+          console.log(localData);
+          setUserData(JSON.parse(localData));
+        }
         console.error('User data is not available.');
       }
     } else {
@@ -39,39 +40,53 @@ const Home = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const data = await getUserFromFarm(userId);
+        let data = null;
+        const localData = localStorage.getItem('localUserData');
+        if (localData) {
+          data = JSON.parse(localData);
+        } else {
+          data = await getUserFromFarm(userId);
+        }
+
         const currentTime = Math.floor(Date.now() / 1000);
 
         if (data) {
           const elapsed = currentTime - data.LastFarmActiveTime;
           const newFarmTime = data.FarmTime - elapsed;
           if (newFarmTime <= 0) {
-            setUserData({
+            data = {
               ...data,
               FarmTime: 0,
               FarmReward: (data.FarmReward || 0) + (data.FarmTime || 0) * 0.1,
               LastFarmActiveTime: currentTime,
-            });
+            };
             setButtonText("Claim");
           } else {
-            setUserData({
+            data = {
               ...data,
+              UserId:userId,
               FarmTime: newFarmTime,
               FarmReward: (data.FarmReward || 0) + (elapsed || 0) * 0.1,
               LastFarmActiveTime: currentTime,
-            });
+            };
             setButtonText("Farming...");
           }
+          setUserData(data);
         } else {
           const initialData = {
+            UserId:userId,
             FarmBalance: 0,
             FarmTime: 14400,
             FarmReward: 0,
             LastFarmActiveTime: currentTime,
+            StartFarmTime: currentTime,
           };
           await addUserToFarm(userId, initialData);
           setUserData(initialData);
         }
+        localStorage.setItem('localUserId', JSON.stringify(userId));
+
+        localStorage.setItem('localUserData', JSON.stringify(data));
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -118,7 +133,9 @@ const Home = () => {
   useEffect(() => {
     const saveUserData = async () => {
       if (userId && userData) {
-        await addUserToFarm(userId, userData);
+        localStorage.setItem('localUserId', JSON.stringify(userId));
+
+        localStorage.setItem('localUserData', JSON.stringify(userData));
       }
     };
 
@@ -148,12 +165,13 @@ const Home = () => {
     } else if (buttonText === "Claim") {
       if (userData?.FarmReward > 0) {
         if (navigator.vibrate) {
-          navigator.vibrate(500); // Vibrate for 500ms
+          navigator.vibrate(500);
         }
         try {
           const newFarmBalance = (userData.FarmBalance || 0) + (userData.FarmReward || 0);
           const newUserData = {
             ...userData,
+            UserId:userData.userId,
             FarmBalance: newFarmBalance,
             FarmReward: 0,
             FarmTime: 14400,
@@ -163,6 +181,9 @@ const Home = () => {
           setShowRCFarm(true);
           setTimeout(() => setShowRCFarm(false), 2000);
           setButtonText("Start");
+          localStorage.setItem('localUserId', JSON.stringify(userId));
+
+          localStorage.setItem('localUserData', JSON.stringify(newUserData));
         } catch (error) {
           console.error('Error claiming reward:', error);
         }
@@ -184,40 +205,40 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-cover text-white flex flex-col items-center p-7 space-y-4">
-      <div className="relative pt-6 mb-3 pb-">
-        <img src={coin} alt="LAR Coin" className="w-63 h-60 rounded-full" />
-      </div>
-      <div className="flex flex-row justify-between items-center space-x-4">
-        <p className="text-white font-bold text-xl">HI, {userName}</p>
-        <p className="text-golden-moon font-bold text-xl">
-          {userData && isValidNumber(userData.FarmBalance) ? userData.FarmBalance.toLocaleString() : "0"} <span className="text-golden-moon">LAR</span>
+    <div className="relative pt-6 mb-3 pb-">
+      <img src={coin} alt="LAR Coin" className="w-63 h-60 rounded-full" />
+    </div>
+    <div className="flex flex-row justify-between items-center space-x-4">
+      <p className="text-white font-bold text-xl">HI, {userId}</p>
+      <p className="text-golden-moon font-bold text-xl">
+        {userData && isValidNumber(userData.FarmBalance) ? userData.FarmBalance.toLocaleString() : "0"} <span className="text-golden-moon">LAR</span>
+      </p>
+    </div>
+
+    <div className="bg-zinc-950 bg-opacity-80 text-card-foreground p-2 rounded-3xl w-full max-w-md text-center min-h-[20vh] flex flex-col justify-center space-y-4">
+      <p className="text-zinc-400 text-xl ">Farming Points</p>
+      <div className="flex items-center justify-center space-x-2">
+        <img aria-hidden="true" alt="team-icon" src={coin2} className="mr-2" width="25" height="5" />
+        <p className="text-4xl font-normal text-primary">
+          {userData && isValidNumber(userData.FarmReward) ? userData.FarmReward.toFixed(1) : "0.0"} <span className="text-golden-moon">LAR</span>
         </p>
       </div>
-
-      <div className="bg-zinc-950 bg-opacity-80 text-card-foreground p-2 rounded-3xl w-full max-w-md text-center min-h-[20vh] flex flex-col justify-center space-y-4">
-        <p className="text-zinc-400 text-xl ">Farming Points</p>
-        <div className="flex items-center justify-center space-x-2">
-          <img aria-hidden="true" alt="team-icon" src={coin2} className="mr-2" width="25" height="5" />
-          <p className="text-4xl font-normal text-primary">
-            {userData && isValidNumber(userData.FarmReward) ? userData.FarmReward.toFixed(1) : "0.0"} <span className="text-golden-moon">LAR</span>
-          </p>
-        </div>
-        <p className="font-extrabold text-red-600"><FormattedTime time={userData?.FarmTime || 0}/></p>
-        <div className="space-y-4 w-full flex items-center flex-col">
-          <button
-            className={`text-white hover:bg-secondary/80 px-6 py-3 rounded-xl w-full max-w-md ${buttonText === "Farming..." ? "bg-zinc-800 bg-opacity-70" : "bg-gradient-to-r from-golden-moon"}`}
-            onClick={handleButtonClick}
-          >
-            {buttonText}
-          </button>
-        </div>
-      </div>
-
-      <div className="w-full max-w-md bg-zinc-900 fixed bottom-0 left-0 flex justify-around py-1">
-        <Footer />
+      <p className="font-extrabold text-red-600"><FormattedTime time={userData?.FarmTime || 0}/></p>
+      <div className="space-y-4 w-full flex items-center flex-col">
+        <button
+          className={`text-white hover:bg-secondary/80 px-6 py-3 rounded-xl w-full max-w-md ${buttonText === "Farming..." ? "bg-zinc-800 bg-opacity-70" : "bg-gradient-to-r from-golden-moon"}`}
+          onClick={handleButtonClick}
+        >
+          {buttonText}
+        </button>
       </div>
     </div>
+
+    <div className="w-full max-w-md bg-zinc-900 fixed bottom-0 left-0 flex justify-around py-1">
+      <Footer />
+    </div>
+  </div>
   );
 };
 
-export default Home;
+export default Home; 

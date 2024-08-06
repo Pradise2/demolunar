@@ -7,8 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
 const Squad = () => {
+  const [userData, setUserData] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [userId, setUserId] = useState("001");
+  const [userId, setUserId] = useState(null);
+  const [loadingTask, setLoadingTask] = useState(null);
   const [username, setUserName] = useState(null);
   const [userSquad, setUserSquad] = useState(null);
   const [squads, setSquads] = useState([]);
@@ -16,7 +18,7 @@ const Squad = () => {
   const [loading, setLoading] = useState(true);
   const [showRCSquad, setShowRCSquad] = useState(false);
   const [error, setError] = useState(null); // Define error state
-
+  
   useEffect(() => {
     // Check if Telegram WebApp is available
     if (window.Telegram && window.Telegram.WebApp) {
@@ -30,20 +32,31 @@ const Squad = () => {
         setUserId(user.id);
         setUserName(user.username);
       } else {
-        console.error('User data is not available.');
+        const localUserId = localStorage.getItem('localUserId');
+        if (localUserId) {
+          const parsedData = JSON.parse(localUserId);
+          setUserId(parsedData);
+        }
       }
     } else {
       console.error('Telegram WebApp script is not loaded.');
     }
+    const localData = localStorage.getItem('localUserData');
+
   }, []);
 
   useEffect(() => {
     const fetchSquadData = async () => {
       try {
-        const response = await axios.get(`https://lunarapp.thelunarcoin.com/backend/api/squad/${userId}`);
+        const response = await axios.get(`https://lunarapp.thelunarcoin.com/testbackend/api/squad/${userId}`);
         const { userSquad, squads } = response.data;
         setUserSquad(userSquad);
         setSquads(squads || []); // Ensure squads is an array
+        const localData = localStorage.getItem('localUserData');
+        if (localData) {
+          console.log(localData);
+          setUserData(JSON.parse(localData));
+        }
         console.log('Fetched squad data:', { userSquad, squads }); // Log the data
       } catch (error) {
         console.error('Error fetching squad data:', error);
@@ -57,27 +70,11 @@ const Squad = () => {
     if (userId) {
       fetchSquadData();
     }
-  }, [userId]);
+  }, [userId, userSquad]);
 
-  useEffect(() => {
-    const fetchFarmData = async () => {
-      try {
-        const data = await getUserFromFarm(userId);
-        setFarmData(data);
-      } catch (error) {
-        console.error('Error fetching farm data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (userId) {
-      fetchFarmData();
-    }
-  }, [userId]);
 
   const copyToClipboard = () => {
-    const reflink = `https://t.me/ThelunarCoin_bot?start=ref_${userId}`;
+    const reflink = `https://t.me/yourlunar_bot?start=ref_${userId}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(reflink).then(() => {
@@ -103,13 +100,14 @@ const Squad = () => {
   };
 
   const handleClaim = async () => {
+    // setLoading(true);
     // Vibrate when claiming
     if (navigator.vibrate) {
       navigator.vibrate(500); // Vibrate for 500ms
     }
 
     try {
-      const response = await axios.get(`https://lunarapp.thelunarcoin.com/backend/api/squad/update/${userId}`);
+      const response = await axios.get(`https://lunarapp.thelunarcoin.com/testbackend/api/squad/update/${userId}`);
       console.log('Claim response:', response.data);
       // Update the user squad data after the claim
       setUserSquad(prevState => ({
@@ -155,19 +153,25 @@ const Squad = () => {
       <div className="bg-zinc-800 bg-opacity-70 p-4 rounded-xl w-full max-w-md space-y-2">
         <p className="text-zinc-400 text-center">Total squad balance</p>
         <p className="text-center text-3xl font-normal">
-          {} <span className="text-golden-moon">LAR</span>
+          {(Number(userSquad.claimedReferral) + Number(userData.FarmBalance)).toLocaleString()} <span className="text-golden-moon">LAR</span>
         </p>
       </div>
       <div className="bg-zinc-800 bg-opacity-70 p-4 rounded-xl w-full max-w-md space-y-2">
         <p className="text-zinc-400 text-center">Your rewards</p>
         <p className="text-center text-3xl font-normal">
-  {userSquad?.referralCount ? `${userSquad.referralCount * 5000} ` : '0 '}
-  <span className="text-golden-moon">LAR</span>
+        {(Number(userSquad.totalBalance) - Number(userSquad.claimedReferral)).toLocaleString()}
+  <span className="text-golden-moon"> LAR</span>
 </p>
 
         <p className="text-sm mb-4 text-center">Earning through friends invite</p>
         <div className="flex p-1 justify-center">
-          <button className="bg-zinc-600 px-4 py-2 rounded-xl">Claim</button>
+        <button
+                  onClick={() => handleClaim(userSquad.squadId, userSquad.totalBalance)}
+                  className="bg-zinc-600 px-4 py-2 rounded-xl"
+                >
+                   {loadingTask === userSquad.squadId ? <div className="spinner-border spinner-border-sm"></div> : 'Claim'}
+                </button>
+          {/* <button className="bg-zinc-600 px-4 py-2 rounded-xl">Claim</button> */}
         </div>
       </div>
       <div className="bg-zinc-800 bg-opacity-70 p-4 rounded-xl w-full max-w-md space-y-2">
