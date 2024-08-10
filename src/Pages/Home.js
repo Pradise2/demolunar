@@ -6,6 +6,7 @@ import './bg.css';
 import { ClipLoader } from 'react-spinners';
 import coin from './log.png';
 import coin2 from './logo.png';
+import axios from 'axios';
 
 const Home = () => {
   const [userData, setUserData] = useState(null);
@@ -14,22 +15,31 @@ const Home = () => {
   const [buttonText, setButtonText] = useState("Start");
   const [showRCFarm, setShowRCFarm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [identity, setIdentity] = useState('765');
+
+
+  // const ball = "1234";
+  const prefix = "local";
+  const [dynamicVariables, setDynamicVariables] = useState({});
 
   useEffect(() => {
+    
     if (window.Telegram && window.Telegram.WebApp) {
       const { WebApp } = window.Telegram;
       WebApp.expand();
       const user = WebApp.initDataUnsafe?.user;
       if (user) {
         setUserId(user.id);
+        setIdentity(user.id)
         setUserName(user.username);
+        
       } else {
-        console.log(userId);
-        const localData = localStorage.getItem('localUserData');
-        if (localData) {
-          console.log(localData);
-          setUserData(JSON.parse(localData));
-        }
+      //   const variableName = `${prefix}${userId}`;
+      // const localData = localStorage.getItem(variableName);
+      //   if (localData) {
+      //     console.log(localData);
+      //     setUserData(JSON.parse(localData));
+      //   }
         console.error('User data is not available.');
       }
     } else {
@@ -37,11 +47,21 @@ const Home = () => {
     }
   }, []);
 
+ 
   useEffect(() => {
+   
     const fetchUserData = async () => {
+      // await axios.get(`https://lunarapp.thelunarcoin.com/testbackend/api/squad/${userId}`);
+      const variableName = `${prefix}${userId}`;
+    //    window.localStorage.clear();
+    // localStorage.clear();
+    //   window.localStorage.removeItem(variableName);
+    //  localStorage.removeItem(variableName);
       try {
         let data = null;
-        const localData = localStorage.getItem('localUserData');
+        const localData = localStorage.getItem(variableName);
+        console.log('this is local data '+ localData);
+
         if (localData) {
           data = JSON.parse(localData);
         } else {
@@ -53,7 +73,25 @@ const Home = () => {
         if (data) {
           const elapsed = currentTime - data.LastFarmActiveTime;
           const newFarmTime = data.FarmTime - elapsed;
-          if (newFarmTime <= 0) {
+          console.log('this is last active time '+ data.LastFarmActiveTime);
+          console.log('this is current time '+ currentTime);
+          console.log('this is farm time '+ data.FarmTime);
+          console.log('this is farm status '+ data.FarmStatus);
+
+          if ( data.FarmStatus !== 'farming') {
+            data = {
+              ...data,
+              UserId:data.userId,
+              FarmBalance: data.FarmBalance,
+              FarmReward: 0,
+              FarmStatus: 'start',
+              FarmTime: 14400,
+              
+            };
+        
+            setButtonText("Start");
+          }
+          else if (newFarmTime <= 0  &&  data.FarmStatus !== 'farming') {
             data = {
               ...data,
               FarmTime: 0,
@@ -84,9 +122,13 @@ const Home = () => {
           await addUserToFarm(userId, initialData);
           setUserData(initialData);
         }
+        setDynamicVariables(prevVariables => ({
+          ...prevVariables,
+          [variableName]: JSON.stringify(data)
+        }));
         localStorage.setItem('localUserId', JSON.stringify(userId));
 
-        localStorage.setItem('localUserData', JSON.stringify(data));
+        localStorage.setItem(variableName, JSON.stringify(data));
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -133,9 +175,10 @@ const Home = () => {
   useEffect(() => {
     const saveUserData = async () => {
       if (userId && userData) {
+        const variableName = `${prefix}${userId}`;
         localStorage.setItem('localUserId', JSON.stringify(userId));
 
-        localStorage.setItem('localUserData', JSON.stringify(userData));
+        localStorage.setItem(variableName, JSON.stringify(userData));
       }
     };
 
@@ -160,6 +203,7 @@ const Home = () => {
       setButtonText("Farming...");
       setUserData((prevState) => ({
         ...prevState,
+        FarmStatus: 'farming',
         LastFarmActiveTime: Math.floor(Date.now() / 1000),
       }));
     } else if (buttonText === "Claim") {
@@ -174,8 +218,11 @@ const Home = () => {
             UserId:userData.userId,
             FarmBalance: newFarmBalance,
             FarmReward: 0,
+            FarmStatus: 'start',
             FarmTime: 14400,
           };
+          const variableName = `${prefix}${userId}`;
+
           await addUserToFarm(userId, newUserData);
           setUserData(newUserData);
           setShowRCFarm(true);
@@ -183,7 +230,7 @@ const Home = () => {
           setButtonText("Start");
           localStorage.setItem('localUserId', JSON.stringify(userId));
 
-          localStorage.setItem('localUserData', JSON.stringify(newUserData));
+          localStorage.setItem(variableName, JSON.stringify(newUserData));
         } catch (error) {
           console.error('Error claiming reward:', error);
         }
@@ -209,9 +256,9 @@ const Home = () => {
       <img src={coin} alt="LAR Coin" className="w-63 h-60 rounded-full" />
     </div>
     <div className="flex flex-row justify-between items-center space-x-4">
-      <p className="text-white font-bold text-xl">HI, {userId}</p>
+      <p className="text-white font-bold text-xl">HI, {userName} - {userId}</p>
       <p className="text-golden-moon font-bold text-xl">
-        {userData && isValidNumber(userData.FarmBalance) ? userData.FarmBalance.toLocaleString() : "0"} <span className="text-golden-moon">LAR</span>
+        { userData.FarmBalance} <span className="text-golden-moon">LAR</span>
       </p>
     </div>
 

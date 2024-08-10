@@ -18,6 +18,7 @@ const Squad = () => {
   const [loading, setLoading] = useState(true);
   const [showRCSquad, setShowRCSquad] = useState(false);
   const [error, setError] = useState(null); // Define error state
+  const prefix = "local";
   
   useEffect(() => {
     // Check if Telegram WebApp is available
@@ -41,9 +42,11 @@ const Squad = () => {
     } else {
       console.error('Telegram WebApp script is not loaded.');
     }
-    const localData = localStorage.getItem('localUserData');
-
+    const variableName = `${prefix}${userId}`;
+    const localData = localStorage.getItem(variableName);
+   
   }, []);
+  
 
   useEffect(() => {
     const fetchSquadData = async () => {
@@ -52,7 +55,8 @@ const Squad = () => {
         const { userSquad, squads } = response.data;
         setUserSquad(userSquad);
         setSquads(squads || []); // Ensure squads is an array
-        const localData = localStorage.getItem('localUserData');
+        const variableName = `${prefix}${userId}`;
+        const localData = localStorage.getItem(variableName);
         if (localData) {
           console.log(localData);
           setUserData(JSON.parse(localData));

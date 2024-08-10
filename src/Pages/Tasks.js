@@ -23,7 +23,7 @@ const Tasks = () => {
   const [showGoButton, setShowGoButton] = useState(false); // New state for showing "Go" button
   const [loading, setLoading] = useState(true); // New state for loading
   const [newFarmBalance, setNewFarmBalance] = useState(null);
-
+  const prefix = "local";
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
       const { WebApp } = window.Telegram;
@@ -33,8 +33,9 @@ const Tasks = () => {
         setUserId(user.id);
       } else {
         const localUserId = localStorage.getItem('localUserId');
-        const localUserData = localStorage.getItem('localUserData');
-
+        const variableName = `${prefix}${userId}`;
+        const localUserData = localStorage.getItem(variableName);
+       
         if (localUserId) {
          
           const parsedData = JSON.parse(localUserId);
@@ -72,14 +73,16 @@ const Tasks = () => {
   }, [userId]);
 
   useEffect(() => {
-    const localUserData = localStorage.getItem('localUserData');
+    const variableName = `${prefix}${userId}`;
+
+    const localUserData = localStorage.getItem(variableName);
     console.log(newFarmBalance);
     if (newFarmBalance !== null && localUserData) {
       const parsedUserData = JSON.parse(localUserData);
       // Update the localStorage with the new FarmBalance
       
       const updatedUserData = { ...parsedUserData, FarmBalance: newFarmBalance };
-      localStorage.setItem('localUserData', JSON.stringify(updatedUserData));
+      localStorage.setItem(variableName, JSON.stringify(updatedUserData));
       // Optionally update the state to reflect changes in the UI
       console.log('this  one'+ updatedUserData)
       // setUserData(updatedUserData);
@@ -143,7 +146,8 @@ const Tasks = () => {
         'statz': 'completed',
       },
     }));
-    const localUserData = localStorage.getItem('localUserData');
+    const variableName = `${prefix}${userId}`;
+    const localUserData = localStorage.getItem(variableName);
       if (localUserData) {
         
         const parsedUserData = JSON.parse(localUserData);
