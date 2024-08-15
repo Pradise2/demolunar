@@ -1,12 +1,15 @@
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  purge: ['./src/**/*.{js,jsx,ts,tsx}', './public/index.html'],
-  darkMode: false, // or 'media' or 'class'
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
   theme: {
-    extend: {},
-  },
-  variants: {
-    extend: {},
+    extend: {
+      colors: {
+        'golden-moon': '#E5C07B', // Adjusted to a softer, more moon-like gold
+      },
+    },
   },
   plugins: [],
-};
+}

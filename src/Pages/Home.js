@@ -6,16 +6,17 @@ import './bg.css';
 import { ClipLoader } from 'react-spinners';
 import coin from './log.png';
 import coin2 from './logo.png';
-import axios from 'axios';
 
 const Home = () => {
   const [userData, setUserData] = useState(null);
-  const [userId, setUserId] = useState('001');
+  const [userId, setUserId] = useState('7220649142'); 
+  // const [userId, setUserId] = useState(null);
+
   const [userName, setUserName] = useState(null);
   const [buttonText, setButtonText] = useState("Start");
   const [showRCFarm, setShowRCFarm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [identity, setIdentity] = useState('765');
+  const [identity, setIdentity] = useState(null);
 
 
   // const ball = "1234";
@@ -29,9 +30,10 @@ const Home = () => {
       WebApp.expand();
       const user = WebApp.initDataUnsafe?.user;
       if (user) {
-        setUserId(user.id);
+        setUserId(JSON.stringify(user.id));
         setIdentity(user.id)
         setUserName(user.username);
+        localStorage.setItem('localUserId', JSON.stringify(user.id));
         
       } else {
       //   const variableName = `${prefix}${userId}`;
@@ -58,6 +60,7 @@ const Home = () => {
     //   window.localStorage.removeItem(variableName);
     //  localStorage.removeItem(variableName);
       try {
+         setLoading(true);
         let data = null;
         const localData = localStorage.getItem(variableName);
         console.log('this is local data '+ localData);
@@ -79,32 +82,36 @@ const Home = () => {
           console.log('this is farm status '+ data.FarmStatus);
 
           if ( data.FarmStatus !== 'farming') {
-            data = {
-              ...data,
-              UserId:data.userId,
-              FarmBalance: data.FarmBalance,
-              FarmReward: 0,
-              FarmStatus: 'start',
-              FarmTime: 14400,
-              
-            };
-        
-            setButtonText("Start");
+            if (newFarmTime <= 0 ){
+              data = {
+                ...data,
+                FarmTime: 0,
+                FarmReward: (Number(data.FarmReward) || 0) + (Number(data.FarmTime) || 0) * 0.1,
+                LastFarmActiveTime: currentTime,
+              };
+              setButtonText("Claim");
+            }
+            else{
+              data = {
+                ...data,
+                // UserId:data.userId,
+                FarmBalance: data.FarmBalance,
+                FarmReward: 0,
+                FarmStatus: 'start',
+                FarmTime: 300,
+                
+              };
+          
+              setButtonText("Start");
+            }
+           
           }
-          else if (newFarmTime <= 0  &&  data.FarmStatus !== 'farming') {
-            data = {
-              ...data,
-              FarmTime: 0,
-              FarmReward: (data.FarmReward || 0) + (data.FarmTime || 0) * 0.1,
-              LastFarmActiveTime: currentTime,
-            };
-            setButtonText("Claim");
-          } else {
+          else {
             data = {
               ...data,
               UserId:userId,
               FarmTime: newFarmTime,
-              FarmReward: (data.FarmReward || 0) + (elapsed || 0) * 0.1,
+              FarmReward: (Number(data.FarmReward) || 0) + (Number(elapsed) || 0) * 0.1,
               LastFarmActiveTime: currentTime,
             };
             setButtonText("Farming...");
@@ -114,7 +121,7 @@ const Home = () => {
           const initialData = {
             UserId:userId,
             FarmBalance: 0,
-            FarmTime: 14400,
+            FarmTime: 300,
             FarmReward: 0,
             LastFarmActiveTime: currentTime,
             StartFarmTime: currentTime,
@@ -144,16 +151,17 @@ const Home = () => {
   useEffect(() => {
     let interval;
     if (buttonText === "Farming...") {
-      interval = setInterval(() => {
+      // interval = setInterval(() => { 
         if (userData) {
           const currentTime = Math.floor(Date.now() / 1000);
           const elapsed = currentTime - userData.LastFarmActiveTime;
           const newFarmTime = userData.FarmTime - elapsed;
+          
           if (newFarmTime <= 0) {
             setUserData((prevState) => ({
               ...prevState,
               FarmTime: 0,
-              FarmReward: (prevState.FarmReward || 0) + (prevState.FarmTime || 0) * 0.1,
+              FarmReward: (Number(prevState.FarmReward) || 0) + (Number(prevState.FarmTime) || 0) * 0.1,
               LastFarmActiveTime: currentTime,
             }));
             setButtonText("Claim");
@@ -161,15 +169,15 @@ const Home = () => {
             setUserData((prevState) => ({
               ...prevState,
               FarmTime: newFarmTime,
-              FarmReward: (prevState.FarmReward || 0) + (elapsed || 0) * 0.1,
+              FarmReward: (Number(prevState.FarmReward) || 0) + (Number(elapsed) || 0) * 0.1,
               LastFarmActiveTime: currentTime,
             }));
-          }
+          } 
         }
-      }, 1000);
+      // }, 1000);
     }
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [buttonText, userData]);
 
   useEffect(() => {
@@ -212,14 +220,14 @@ const Home = () => {
           navigator.vibrate(500);
         }
         try {
-          const newFarmBalance = (userData.FarmBalance || 0) + (userData.FarmReward || 0);
+          const newFarmBalance = (Number(Math.round(userData.FarmBalance)) || 0) + (Number(Math.round(userData.FarmReward)) || 0);
           const newUserData = {
             ...userData,
-            UserId:userData.userId,
+            UserId:userId,
             FarmBalance: newFarmBalance,
             FarmReward: 0,
             FarmStatus: 'start',
-            FarmTime: 14400,
+            FarmTime: 300,
           };
           const variableName = `${prefix}${userId}`;
 
@@ -258,7 +266,7 @@ const Home = () => {
     <div className="flex flex-row justify-between items-center space-x-4">
       <p className="text-white font-bold text-xl">HI, {userName} - {userId}</p>
       <p className="text-golden-moon font-bold text-xl">
-        { userData.FarmBalance} <span className="text-golden-moon">LAR</span>
+        { Math.round(userData.FarmBalance).toLocaleString()} <span className="text-golden-moon">LAR</span>
       </p>
     </div>
 
@@ -273,7 +281,7 @@ const Home = () => {
       <p className="font-extrabold text-red-600"><FormattedTime time={userData?.FarmTime || 0}/></p>
       <div className="space-y-4 w-full flex items-center flex-col">
         <button
-          className={`text-white hover:bg-secondary/80 px-6 py-3 rounded-xl w-full max-w-md ${buttonText === "Farming..." ? "bg-zinc-800 bg-opacity-70" : "bg-gradient-to-r from-golden-moon"}`}
+          className={`text-white hover:bg-secondary/80 px-6 py-3 rounded-xl w-full max-w-md  ${buttonText === "Farming..." ? "bg-zinc-800 bg-opacity-70" : "bg-gradient-to-r from-golden-moon"}`}
           onClick={handleButtonClick}
         >
           {buttonText}

@@ -114,11 +114,11 @@ const Tasks = () => {
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    const saveInterval = setInterval(saveUserData, 10000);
+    // const saveInterval = setInterval(saveUserData, 10000);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      clearInterval(saveInterval);
+      // clearInterval(saveInterval);
       saveUserData();
       
     };
@@ -157,7 +157,7 @@ const Tasks = () => {
         console.log('usdatess'+ updatedFarmBalance)
         setNewFarmBalance(updatedFarmBalance);
       }
-  }, 10000);
+  }, 1000);
   
  
   };
@@ -244,13 +244,18 @@ const Tasks = () => {
             </div>
             <div className="flex items-center space-x-2">
               {task.status === 'start' && (
-                <button
-                  onClick={() => handleStartClick(task.id, task.linkz)}
-                  className="bg-golden-moon text-white py-2 px-4 rounded-xl"
-                  disabled={loadingTask === task.id}
-                >
-                  {loadingTask === task.id ? <div className="spinner-border spinner-border-sm"></div> : 'Start'}
-                </button>
+                <button 
+                onClick={() => handleStartClick(task.id, task.linkz)} 
+                className="bg-golden-moon text-white py-2 px-4 rounded-xl"
+                disabled={loadingTask === task.id}
+              >
+                {loadingTask === task.id ? (
+                  <div className="spinner-border spinner-border-sm"></div>
+                ) : (
+                  'Start'
+                )}
+              </button>
+                
               )}
               {task.status === 'claim' && (
                 <button
